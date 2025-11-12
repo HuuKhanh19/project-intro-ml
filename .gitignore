@@ -1,0 +1,24 @@
+# Python & Conda
+__pycache__/
+*.pyc
+.env
+.venv
+env/
+venv/
+
+# IDE
+.idea/
+.vscode/
+
+# Dữ liệu & Models
+data/
+datasets/
+models/
+*.pth
+*.h5
+*.pt
+*.onnx
+
+# Jupyter
+.ipynb_checkpoints
+
