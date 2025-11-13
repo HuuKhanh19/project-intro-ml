@@ -1,0 +1,10 @@
+{
+  "overall_accuracy": 94.17239983812222,
+  "per_class_accuracy": {
+    "COVID-19": 46.51162790697674,
+    "Normal": 95.5955955955956,
+    "Pneumonia": 96.09679937548789,
+    "Tuberculosis": 96.19047619047619
+  },
+  "classification_report": "              precision    recall  f1-score   support\n\n    COVID-19     0.9091    0.4651    0.6154        86\n      Normal     0.9148    0.9560    0.9349       999\n   Pneumonia     0.9625    0.9610    0.9617      1281\nTuberculosis     0.9712    0.9619    0.9665       105\n\n    accuracy                         0.9417      2471\n   macro avg     0.9394    0.8360    0.8696      2471\nweighted avg     0.9417    0.9417    0.9390      2471\n"
+}
