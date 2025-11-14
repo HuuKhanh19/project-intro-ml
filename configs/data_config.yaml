@@ -1,6 +1,6 @@
 # Data Configuration
 data:
-  root_dir: "data/processed"
+  root_dir: "data/balanced"
   splits:
     - train
     - val

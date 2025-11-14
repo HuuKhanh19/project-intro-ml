@@ -14,7 +14,8 @@ class Trainer:
         criterion,
         optimizer,
         device='cuda' if torch.cuda.is_available() else 'cpu',
-        checkpoint_dir='checkpoints'
+        checkpoint_dir='checkpoints',
+        class_weights=None
     ):
         self.model = model.to(device)
         self.train_loader = train_loader
@@ -23,6 +24,12 @@ class Trainer:
         self.optimizer = optimizer
         self.device = device
         self.checkpoint_dir = checkpoint_dir
+
+        if class_weights is not None:
+            class_weights = class_weights.to(device)
+            self.criterion = nn.CrossEntropyLoss(weight=class_weights)
+        else:
+            self.criterion = criterion
         
         # Tạo thư mục checkpoint nếu chưa có
         os.makedirs(checkpoint_dir, exist_ok=True)

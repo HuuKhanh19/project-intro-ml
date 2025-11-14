@@ -24,11 +24,14 @@ training:
   
   loss:
     type: "CrossEntropyLoss"
+    weighted: true
 
 data:
   normalization: "imagenet"  # hoặc "custom"
-  num_workers: 2
+  num_workers: 8
   pin_memory: true
+  prefetch_factor: 4 
+  persistent_workers: true
 
 checkpoint:
   save_dir: "checkpoints"
