@@ -8,7 +8,7 @@ model:
 
 training:
   num_epochs: 30
-  batch_size: 64
+  batch_size: 64        # OK với GPU của bạn (673 MB < 15 GB)
   learning_rate: 0.001
   weight_decay: 0.0001
   
@@ -24,13 +24,13 @@ training:
   
   loss:
     type: "CrossEntropyLoss"
-    weighted: true
+    weighted: false     # Không cần vì data đã balanced
 
 data:
-  normalization: "imagenet"  # hoặc "custom"
-  num_workers: 8
+  normalization: "imagenet"
+  num_workers: 4        # An toàn, không quá cao
   pin_memory: true
-  prefetch_factor: 4 
+  prefetch_factor: 2    # Đủ để GPU không idle
   persistent_workers: true
 
 checkpoint:
@@ -38,4 +38,4 @@ checkpoint:
   save_best: true
   save_every: 5
 
-device: "cuda"  # cuda hoặc cpu
+device: "cuda"
