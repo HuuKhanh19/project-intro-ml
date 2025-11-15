@@ -3,13 +3,13 @@ model:
   name: "ResNet-50"
   type: "resnet50"
   description: "Deep residual networks with skip connections (2015)"
-  pretrained: true
+  pretrained: true  # ← Quan trọng!
   num_classes: 4
 
 training:
-  num_epochs: 20
-  batch_size: 32
-  learning_rate: 0.0001  # Lower for pretrained
+  num_epochs: 20    # Ít hơn LeNet vì pretrained
+  batch_size: 32    # Nhỏ hơn vì model lớn hơn
+  learning_rate: 0.0001  # Nhỏ hơn vì fine-tuning pretrained
   weight_decay: 0.0001
   
   optimizer:
@@ -24,11 +24,14 @@ training:
   
   loss:
     type: "CrossEntropyLoss"
+    weighted: false
 
 data:
-  normalization: "imagenet"
-  num_workers: 2
+  normalization: "imagenet"  # Pretrained dùng ImageNet stats
+  num_workers: 4
   pin_memory: true
+  prefetch_factor: 2
+  persistent_workers: true
 
 checkpoint:
   save_dir: "checkpoints"
