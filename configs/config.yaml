@@ -1,0 +1,75 @@
+# Dataset Configuration
+data:
+  processed_dir: "data/processed"
+  image_size: 224
+  num_classes: 5
+  class_names: ["Normal", "Pneumonia", "COVID", "Tuberculosis", "Pneumothorax"]
+  
+  # Class weights for weighted loss (inverse frequency)
+  # Based on train distribution: [3500, 3150, 2531, 489, 1665]
+  class_weights: [0.286, 0.317, 0.395, 2.044, 0.600]
+
+# Training Configuration
+training:
+  batch_size: 32
+  num_epochs: 100
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  
+  # Early stopping
+  patience: 15
+  
+  # Learning rate scheduler
+  lr_scheduler:
+    type: "ReduceLROnPlateau"
+    factor: 0.5
+    patience: 5
+    min_lr: 0.000001
+  
+  # Optimizer
+  optimizer: "AdamW"
+
+# Data Augmentation (only for train)
+augmentation:
+  # Strong augmentation for minority classes (TB, Pneumothorax)
+  strong:
+    rotation_range: 15
+    horizontal_flip: 0.5
+    brightness: 0.2
+    contrast: 0.2
+    zoom_range: [0.9, 1.1]
+  
+  # Mild augmentation for majority classes (Normal, Pneumonia, COVID)
+  mild:
+    rotation_range: 10
+    horizontal_flip: 0.5
+    brightness: 0.1
+    contrast: 0.1
+
+# Model Configuration
+models:
+  mlp:
+    hidden_dims: [512, 256, 128]
+    dropout: 0.5
+  
+  lenet:
+    dropout: 0.3
+  
+  resnet50:
+    pretrained: true
+    freeze_backbone: false  # Fine-tune all layers
+    dropout: 0.5
+  
+  efficientnet_b3:
+    pretrained: true
+    freeze_backbone: false
+    dropout: 0.3
+
+# Paths
+paths:
+  checkpoints: "checkpoints"
+  logs: "logs"
+  results: "results"
+
+# Device
+device: "cuda"  # or "cpu"
