@@ -274,7 +274,7 @@ class Trainer:
 def main():
     parser = argparse.ArgumentParser(description='Train chest X-ray classification model')
     parser.add_argument('--model', type=str, required=True,
-                      choices=['mlp', 'lenet', 'resnet50', 'efficientnet_b3'],
+                      choices=['mlp', 'lenet', 'densenet121', 'convnext_tiny'],
                       help='Model to train')
     parser.add_argument('--config', type=str, default='configs/config.yaml',
                       help='Path to config file')

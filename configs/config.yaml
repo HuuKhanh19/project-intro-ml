@@ -60,12 +60,12 @@ models:
   lenet:
     dropout: 0.3
   
-  resnet50:
+  densenet121:
     pretrained: true
-    freeze_backbone: false  # Fine-tune all layers
-    dropout: 0.5
+    freeze_backbone: false
+    dropout: 0.4
   
-  efficientnet_b3:
+  convnext_tiny:
     pretrained: true
     freeze_backbone: false
     dropout: 0.3
