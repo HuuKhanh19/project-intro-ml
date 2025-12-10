@@ -29,22 +29,27 @@ training:
   # Optimizer
   optimizer: "AdamW"
 
-# Data Augmentation (only for train)
+# Data Augmentation (only for train) - Medical imaging appropriate
 augmentation:
   # Strong augmentation for minority classes (TB, Pneumothorax)
   strong:
-    rotation_range: 15
-    horizontal_flip: 0.5
-    brightness: 0.2
-    contrast: 0.2
-    zoom_range: [0.9, 1.1]
+    rotation_range: 15  # Patient positioning variation
+    horizontal_flip: 0.5  # Mirror image (anatomically valid)
+    translate: 0.05  # 5% positioning shift
+    scale: [0.95, 1.05]  # 5% zoom variation
+    gaussian_noise: 0.01  # Equipment noise simulation
   
   # Mild augmentation for majority classes (Normal, Pneumonia, COVID)
   mild:
     rotation_range: 10
     horizontal_flip: 0.5
-    brightness: 0.1
-    contrast: 0.1
+    translate: 0.03
+    scale: [0.97, 1.03]
+  
+  # REMOVED (not appropriate for X-rays):
+  # - ColorJitter (X-rays are grayscale)
+  # - Vertical flip (violates anatomy)
+  # - Excessive rotation (unrealistic positioning)
 
 # Model Configuration
 models:
