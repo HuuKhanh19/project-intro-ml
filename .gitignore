@@ -1,6 +1,7 @@
-# Python & Conda
+# Python
 __pycache__/
 *.pyc
+*.pyo
 .env
 .venv
 env/
@@ -9,16 +10,33 @@ venv/
 # IDE
 .idea/
 .vscode/
+*.swp
 
-# Dữ liệu & Models
-data/
-datasets/
-models/
+# Data (QUAN TRỌNG - dung lượng lớn)
+data/raw/
+data/processed/
+
+# Models & Checkpoints
+checkpoints/
 *.pth
-*.h5
 *.pt
+*.h5
 *.onnx
+*.pkl
+
+# Logs
+logs/
+runs/
+*.log
 
 # Jupyter
 .ipynb_checkpoints
+*.ipynb_checkpoints
 
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+*.tmp
+temp/
