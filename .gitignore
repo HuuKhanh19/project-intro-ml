@@ -15,6 +15,7 @@ venv/
 # Data (QUAN TRỌNG - dung lượng lớn)
 data/raw/
 data/processed/
+data/cleaned/
 
 # Models & Checkpoints
 checkpoints/

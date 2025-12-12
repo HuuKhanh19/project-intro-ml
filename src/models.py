@@ -1,21 +1,21 @@
 """
-4 models for comparison:
-1. MLP (baseline)
+4 models for comparison (FINAL - optimized for small medical dataset):
+1. MLP (baseline - worst expected)
 2. LeNet-5 (CNN basic)
-3. DenseNet-121 (CNN advanced - better than ResNet for medical)
-4. ConvNeXt-Tiny (SOTA 2022 - best for small datasets)
+3. ResNet-18 (CNN advanced - smaller & less overfit than ResNet50)
+4. EfficientNet-B0 (SOTA - smallest EfficientNet for small datasets)
 """
 
 import torch
 import torch.nn as nn
 import torchvision.models as models
-from torchvision.models import DenseNet121_Weights, ConvNeXt_Tiny_Weights
+from torchvision.models import ResNet18_Weights, EfficientNet_B0_Weights
 import yaml
 
 
 class MLP(nn.Module):
     """Simple Multi-Layer Perceptron"""
-    def __init__(self, input_size=224, num_classes=5, hidden_dims=[512, 256, 128], dropout=0.5):
+    def __init__(self, input_size=224, num_classes=5, hidden_dims=[512, 256, 128], dropout=0.6):
         super(MLP, self).__init__()
         
         flatten_size = input_size * input_size * 3
@@ -42,7 +42,7 @@ class MLP(nn.Module):
 
 class LeNet5(nn.Module):
     """LeNet-5 adapted for chest X-rays"""
-    def __init__(self, num_classes=5, dropout=0.3):
+    def __init__(self, num_classes=5, dropout=0.5):
         super(LeNet5, self).__init__()
         
         self.features = nn.Sequential(
@@ -74,51 +74,46 @@ class LeNet5(nn.Module):
         return x
 
 
-class DenseNet121Custom(nn.Module):
-    """DenseNet-121 with custom classifier - Better for medical imaging"""
-    def __init__(self, num_classes=5, pretrained=True, dropout=0.4):
-        super(DenseNet121Custom, self).__init__()
+class ResNet18Custom(nn.Module):
+    """ResNet-18 - Smaller than ResNet50, less prone to overfitting"""
+    def __init__(self, num_classes=5, pretrained=True, dropout=0.6):
+        super(ResNet18Custom, self).__init__()
         
         if pretrained:
-            self.densenet = models.densenet121(weights=DenseNet121_Weights.IMAGENET1K_V1)
+            self.resnet = models.resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
         else:
-            self.densenet = models.densenet121(weights=None)
+            self.resnet = models.resnet18(weights=None)
         
-        # Replace classifier
-        in_features = self.densenet.classifier.in_features
-        self.densenet.classifier = nn.Sequential(
+        # Replace final FC layer with dropout
+        in_features = self.resnet.fc.in_features
+        self.resnet.fc = nn.Sequential(
             nn.Dropout(dropout),
             nn.Linear(in_features, num_classes)
         )
     
     def forward(self, x):
-        return self.densenet(x)
+        return self.resnet(x)
 
 
-class ConvNeXtTinyCustom(nn.Module):
-    """ConvNeXt-Tiny - SOTA for small/medium datasets"""
-    def __init__(self, num_classes=5, pretrained=True, dropout=0.3):
-        super(ConvNeXtTinyCustom, self).__init__()
+class EfficientNetB0Custom(nn.Module):
+    """EfficientNet-B0 - Smallest EfficientNet, optimized for small datasets"""
+    def __init__(self, num_classes=5, pretrained=True, dropout=0.5):
+        super(EfficientNetB0Custom, self).__init__()
         
         if pretrained:
-            self.convnext = models.convnext_tiny(weights=ConvNeXt_Tiny_Weights.IMAGENET1K_V1)
+            self.efficientnet = models.efficientnet_b0(weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
         else:
-            self.convnext = models.convnext_tiny(weights=None)
+            self.efficientnet = models.efficientnet_b0(weights=None)
         
         # Replace classifier
-        in_features = self.convnext.classifier[2].in_features
-        self.convnext.classifier[2] = nn.Linear(in_features, num_classes)
-        
-        # Add dropout
-        self.convnext.classifier = nn.Sequential(
-            self.convnext.classifier[0],  # LayerNorm
-            self.convnext.classifier[1],  # Flatten
-            nn.Dropout(dropout),
-            self.convnext.classifier[2]   # Linear (already replaced)
+        in_features = self.efficientnet.classifier[1].in_features
+        self.efficientnet.classifier = nn.Sequential(
+            nn.Dropout(p=dropout, inplace=True),
+            nn.Linear(in_features, num_classes)
         )
     
     def forward(self, x):
-        return self.convnext(x)
+        return self.efficientnet(x)
 
 
 def get_model(model_name, config_path='configs/config.yaml'):
@@ -126,7 +121,7 @@ def get_model(model_name, config_path='configs/config.yaml'):
     Factory function to get model by name
     
     Args:
-        model_name: 'mlp', 'lenet', 'densenet121', 'convnext_tiny'
+        model_name: 'mlp', 'lenet', 'resnet18', 'efficientnet_b0'
         config_path: Path to config file
     
     Returns:
@@ -155,17 +150,17 @@ def get_model(model_name, config_path='configs/config.yaml'):
             dropout=model_config['dropout']
         )
     
-    elif model_name == 'densenet121':
-        model_config = config['models']['densenet121']
-        model = DenseNet121Custom(
+    elif model_name == 'resnet18':
+        model_config = config['models']['resnet18']
+        model = ResNet18Custom(
             num_classes=num_classes,
             pretrained=model_config['pretrained'],
             dropout=model_config['dropout']
         )
     
-    elif model_name == 'convnext_tiny':
-        model_config = config['models']['convnext_tiny']
-        model = ConvNeXtTinyCustom(
+    elif model_name == 'efficientnet_b0':
+        model_config = config['models']['efficientnet_b0']
+        model = EfficientNetB0Custom(
             num_classes=num_classes,
             pretrained=model_config['pretrained'],
             dropout=model_config['dropout']
@@ -184,10 +179,10 @@ def count_parameters(model):
 
 if __name__ == "__main__":
     # Test all models
-    models_list = ['mlp', 'lenet', 'densenet121', 'convnext_tiny']
+    models_list = ['mlp', 'lenet', 'resnet18', 'efficientnet_b0']
     
     print("=" * 80)
-    print("MODEL ARCHITECTURES")
+    print("MODEL ARCHITECTURES - FINAL")
     print("=" * 80)
     
     for model_name in models_list:
@@ -201,3 +196,7 @@ if __name__ == "__main__":
         print(f"\n{model_name.upper()}:")
         print(f"  Parameters: {params:,}")
         print(f"  Output shape: {output.shape}")
+    
+    print("\n" + "=" * 80)
+    print("All models ready for training!")
+    print("=" * 80)

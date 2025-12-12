@@ -57,27 +57,20 @@ class ChestXrayDataset(Dataset):
                 ]),
                 'strong': transforms.Compose([
                     transforms.Resize((image_size, image_size)),
-                    # Rotation: ±15° (patient positioning variation)
                     transforms.RandomRotation(15),
-                    # Horizontal flip: OK (mirror image)
                     transforms.RandomHorizontalFlip(0.5),
-                    # Translation & zoom (slight positioning variation)
                     transforms.RandomAffine(
                         degrees=0, 
-                        translate=(0.05, 0.05),  # 5% shift
-                        scale=(0.95, 1.05)       # 5% zoom
+                        translate=(0.05, 0.05),
+                        scale=(0.95, 1.05)
                     ),
                     transforms.ToTensor(),
-                    # Add Gaussian noise to simulate equipment variation
-                    transforms.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
                     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
                 ]),
                 'mild': transforms.Compose([
                     transforms.Resize((image_size, image_size)),
-                    # Milder rotation for common classes
                     transforms.RandomRotation(10),
                     transforms.RandomHorizontalFlip(0.5),
-                    # Very slight positioning variation
                     transforms.RandomAffine(
                         degrees=0,
                         translate=(0.03, 0.03),
@@ -88,7 +81,6 @@ class ChestXrayDataset(Dataset):
                 ])
             }
         else:
-            # Val/Test: No augmentation
             return {
                 'base': transforms.Compose([
                     transforms.Resize((image_size, image_size)),

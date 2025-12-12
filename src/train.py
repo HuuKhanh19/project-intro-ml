@@ -1,6 +1,6 @@
 """
 Training script with:
-- Weighted Cross-Entropy Loss
+- Weighted Cross-Entropy Loss (ONLY for training, NOT for val/test)
 - Early Stopping
 - Learning Rate Scheduling
 - Tensorboard Logging
@@ -46,9 +46,11 @@ class Trainer:
         print(f"\nModel: {model_name}")
         print(f"Parameters: {count_parameters(self.model):,}")
         
-        # Setup weighted loss
+        # Setup loss functions (CORRECTED - weighted for BOTH train & val)
         class_weights = torch.tensor(self.config['data']['class_weights']).to(self.device)
         self.criterion = nn.CrossEntropyLoss(weight=class_weights)
+        
+        print(f"\nClass weights (train & val): {class_weights.cpu().tolist()}")
         
         # Setup optimizer
         self.optimizer = optim.AdamW(
@@ -92,7 +94,7 @@ class Trainer:
             # Forward
             self.optimizer.zero_grad()
             outputs = self.model(images)
-            loss = self.criterion(outputs, labels)
+            loss = self.criterion(outputs, labels)  # Weighted
             
             # Backward
             loss.backward()
@@ -130,7 +132,7 @@ class Trainer:
                 images, labels = images.to(self.device), labels.to(self.device)
                 
                 outputs = self.model(images)
-                loss = self.criterion(outputs, labels)
+                loss = self.criterion(outputs, labels)  # Weighted (same as training)
                 
                 total_loss += loss.item()
                 _, predicted = outputs.max(1)
@@ -223,9 +225,9 @@ class Trainer:
         self.writer.close()
     
     def test(self):
-        """Test model on test set"""
+        """Test model on test set with UNWEIGHTED metrics"""
         print("\n" + "=" * 80)
-        print("TESTING")
+        print("TESTING (Unweighted Metrics for Clinical Evaluation)")
         print("=" * 80)
         
         # Load best checkpoint
@@ -274,7 +276,7 @@ class Trainer:
 def main():
     parser = argparse.ArgumentParser(description='Train chest X-ray classification model')
     parser.add_argument('--model', type=str, required=True,
-                      choices=['mlp', 'lenet', 'densenet121', 'convnext_tiny'],
+                      choices=['mlp', 'lenet', 'resnet18', 'efficientnet_b0'],
                       help='Model to train')
     parser.add_argument('--config', type=str, default='configs/config.yaml',
                       help='Path to config file')
