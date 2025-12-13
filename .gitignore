@@ -2,20 +2,34 @@
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+.Python
+*.py[cod]
+*$py.class
+
+# Virtual Environment
 .env
 .venv
 env/
 venv/
+ENV/
+env.bak/
+venv.bak/
 
 # IDE
 .idea/
 .vscode/
 *.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
 
 # Data (QUAN TRỌNG - dung lượng lớn)
 data/raw/
-data/processed/
 data/cleaned/
+data/processed/
 
 # Models & Checkpoints
 checkpoints/
@@ -24,20 +38,84 @@ checkpoints/
 *.h5
 *.onnx
 *.pkl
+*.weights
 
-# Logs
+# Logs & TensorBoard
 logs/
 runs/
 *.log
+events.out.tfevents.*
 
-# Jupyter
-.ipynb_checkpoints
+# Jupyter Notebooks
+.ipynb_checkpoints/
 *.ipynb_checkpoints
+
+# Results (keep structure, ignore large files)
+results/*.png
+results/*.jpg
+results/*.pdf
+# Keep summary files
+!results/summary.csv
+!results/*.tex
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+Desktop.ini
 
-# Temporary
+# Temporary files
 *.tmp
+*.temp
 temp/
+tmp/
+*.bak
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Compiled files
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Archives
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip

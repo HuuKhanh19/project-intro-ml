@@ -1,0 +1,91 @@
+# Experiment Definitions
+# 4 models × 2 loss functions = 8 experiments
+
+experiments:
+  # DenseNet-121 Experiments
+  exp01_densenet121_weighted_ce:
+    name: "DenseNet-121 + Weighted CE"
+    model: "densenet121"
+    loss: "weighted_ce"
+    priority: 1  # Run first (best model)
+    description: "DenseNet-121 with weighted cross-entropy loss"
+  
+  exp02_densenet121_focal:
+    name: "DenseNet-121 + Focal Loss"
+    model: "densenet121"
+    loss: "focal"
+    priority: 2
+    description: "DenseNet-121 with focal loss (gamma=2.0)"
+  
+  # EfficientNet-B0 Experiments
+  exp03_efficientnet_b0_weighted_ce:
+    name: "EfficientNet-B0 + Weighted CE"
+    model: "efficientnet_b0"
+    loss: "weighted_ce"
+    priority: 3
+    description: "EfficientNet-B0 with weighted cross-entropy loss"
+  
+  exp04_efficientnet_b0_focal:
+    name: "EfficientNet-B0 + Focal Loss"
+    model: "efficientnet_b0"
+    loss: "focal"
+    priority: 4
+    description: "EfficientNet-B0 with focal loss (gamma=2.0)"
+  
+  # LeNet Experiments
+  exp05_lenet_weighted_ce:
+    name: "LeNet + Weighted CE"
+    model: "lenet"
+    loss: "weighted_ce"
+    priority: 5
+    description: "Modern LeNet with weighted cross-entropy loss"
+  
+  exp06_lenet_focal:
+    name: "LeNet + Focal Loss"
+    model: "lenet"
+    loss: "focal"
+    priority: 6
+    description: "Modern LeNet with focal loss (gamma=2.0)"
+  
+  # MLP Experiments (slowest, run last)
+  exp07_mlp_weighted_ce:
+    name: "MLP + Weighted CE"
+    model: "mlp"
+    loss: "weighted_ce"
+    priority: 7
+    description: "Multi-layer perceptron baseline with weighted CE"
+    notes: "Memory intensive, reduced batch size to 16"
+  
+  exp08_mlp_focal:
+    name: "MLP + Focal Loss"
+    model: "mlp"
+    loss: "focal"
+    priority: 8
+    description: "Multi-layer perceptron baseline with focal loss"
+    notes: "Memory intensive, reduced batch size to 16"
+
+# Experiment groups for batch running
+experiment_groups:
+  pretrained:
+    - exp01_densenet121_weighted_ce
+    - exp02_densenet121_focal
+    - exp03_efficientnet_b0_weighted_ce
+    - exp04_efficientnet_b0_focal
+  
+  from_scratch:
+    - exp05_lenet_weighted_ce
+    - exp06_lenet_focal
+    - exp07_mlp_weighted_ce
+    - exp08_mlp_focal
+  
+  weighted_ce:
+    - exp01_densenet121_weighted_ce
+    - exp03_efficientnet_b0_weighted_ce
+    - exp05_lenet_weighted_ce
+    - exp07_mlp_weighted_ce
+  
+  focal:
+    - exp02_densenet121_focal
+    - exp04_efficientnet_b0_focal
+    - exp06_lenet_focal
+    - exp08_mlp_focal

@@ -1,11 +1,7 @@
 """
 Dataset class for chest X-ray classification with medical-specific augmentation.
-- Runtime augmentation for minority classes (COVID, Tuberculosis, Pneumothorax)
-- Medical-appropriate augmentations: Horizontal Flip, Rotation, Gamma, CLAHE
-- ImageNet normalization for pretrained models
 """
 
-import os
 import numpy as np
 from pathlib import Path
 from PIL import Image
@@ -15,6 +11,7 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import cv2
 
+
 class ChestXrayDataset(Dataset):
     """
     Chest X-ray Dataset with class-specific augmentation.
@@ -23,9 +20,11 @@ class ChestXrayDataset(Dataset):
         data_dir (str): Path to data directory (e.g., 'data/processed/train')
         transform (callable, optional): Albumentations transform pipeline
         augment_minority (bool): Whether to apply augmentation to minority classes
+        minority_classes (list): List of minority class names
     """
     
-    def __init__(self, data_dir, transform=None, augment_minority=False):
+    def __init__(self, data_dir, transform=None, augment_minority=False, 
+                 minority_classes=None):
         self.data_dir = Path(data_dir)
         self.transform = transform
         self.augment_minority = augment_minority
@@ -35,7 +34,10 @@ class ChestXrayDataset(Dataset):
         self.class_to_idx = {cls: idx for idx, cls in enumerate(self.classes)}
         
         # Minority classes that need augmentation
-        self.minority_classes = {'COVID', 'Tuberculosis', 'Pneumothorax'}
+        if minority_classes is None:
+            self.minority_classes = {'COVID', 'Tuberculosis', 'Pneumothorax'}
+        else:
+            self.minority_classes = set(minority_classes)
         
         # Load all image paths and labels
         self.samples = []
@@ -126,24 +128,37 @@ class ChestXrayDataset(Dataset):
         return torch.FloatTensor(class_weights)
 
 
-def get_train_transform(image_size=224):
+def get_train_transform(config):
     """
-    Get training transform with medical-appropriate augmentation for minority classes.
+    Get training transform with medical-appropriate augmentation.
     
-    Augmentations:
-    - Horizontal Flip: Lungs are relatively symmetric
-    - Random Rotation: ±5-10°, patients not always perfectly aligned
-    - Gamma Correction: Simulate different X-ray exposure levels
-    - CLAHE: Enhance local contrast for bone/tissue structures
+    Args:
+        config: Configuration dictionary with augmentation settings
+    
+    Returns:
+        Albumentations Compose transform
     """
+    aug_config = config['augmentation']
+    
     return A.Compose([
         # Geometric augmentation
-        A.HorizontalFlip(p=0.5),
-        A.Rotate(limit=10, border_mode=cv2.BORDER_CONSTANT, value=0, p=0.3),
+        A.HorizontalFlip(p=aug_config['horizontal_flip_prob']),
+        A.Rotate(
+            limit=aug_config['rotation_limit'],
+            border_mode=cv2.BORDER_CONSTANT,
+            p=aug_config['rotation_prob']
+        ),
         
         # Photometric augmentation
-        A.RandomGamma(gamma_limit=(80, 120), p=0.3),  # Simulate different X-ray exposures
-        A.CLAHE(clip_limit=2.0, tile_grid_size=(8, 8), p=0.3),  # Enhance local contrast
+        A.RandomGamma(
+            gamma_limit=tuple(aug_config['gamma_limit']),
+            p=aug_config['gamma_prob']
+        ),
+        A.CLAHE(
+            clip_limit=aug_config['clahe_clip_limit'],
+            tile_grid_size=tuple(aug_config['clahe_tile_grid_size']),
+            p=aug_config['clahe_prob']
+        ),
         
         # Normalization (ImageNet stats for pretrained models)
         A.Normalize(
@@ -155,9 +170,15 @@ def get_train_transform(image_size=224):
     ])
 
 
-def get_val_transform(image_size=224):
+def get_val_transform(config):
     """
     Get validation/test transform (no augmentation, only normalization).
+    
+    Args:
+        config: Configuration dictionary
+    
+    Returns:
+        Albumentations Compose transform
     """
     return A.Compose([
         # Only normalization, NO augmentation for fair evaluation
@@ -170,41 +191,45 @@ def get_val_transform(image_size=224):
     ])
 
 
-def create_dataloaders(data_dir='data/processed', 
-                      batch_size=32, 
-                      num_workers=4,
-                      image_size=224):
+def create_dataloaders(config):
     """
     Create train, validation and test dataloaders.
     
     Args:
-        data_dir (str): Path to processed data directory
-        batch_size (int): Batch size
-        num_workers (int): Number of workers for data loading
-        image_size (int): Image size (assumes square images)
+        config: Configuration dictionary
     
     Returns:
-        dict: Dictionary containing train_loader, val_loader, test_loader
+        dict: Dictionary containing dataloaders and metadata
     """
-    data_dir = Path(data_dir)
+    data_dir = Path(config['data']['data_dir'])
+    batch_size = config['training']['batch_size']
+    num_workers = config['data']['num_workers']
+    pin_memory = config['data'].get('pin_memory', True)
+    
+    # Get augmentation settings
+    augment_minority = config['augmentation']['augment_minority_only']
+    minority_classes = config['augmentation']['minority_classes']
     
     # Create datasets
     train_dataset = ChestXrayDataset(
         data_dir=data_dir / 'train',
-        transform=get_train_transform(image_size),
-        augment_minority=True  # Apply augmentation to minority classes
+        transform=get_train_transform(config),
+        augment_minority=augment_minority,
+        minority_classes=minority_classes
     )
     
     val_dataset = ChestXrayDataset(
         data_dir=data_dir / 'val',
-        transform=get_val_transform(image_size),
-        augment_minority=False  # No augmentation for validation
+        transform=get_val_transform(config),
+        augment_minority=False,
+        minority_classes=minority_classes
     )
     
     test_dataset = ChestXrayDataset(
         data_dir=data_dir / 'test',
-        transform=get_val_transform(image_size),
-        augment_minority=False  # No augmentation for test
+        transform=get_val_transform(config),
+        augment_minority=False,
+        minority_classes=minority_classes
     )
     
     # Create dataloaders
@@ -213,7 +238,7 @@ def create_dataloaders(data_dir='data/processed',
         batch_size=batch_size,
         shuffle=True,
         num_workers=num_workers,
-        pin_memory=True,
+        pin_memory=pin_memory,
         drop_last=True  # Drop incomplete batch for stable batch norm
     )
     
@@ -222,7 +247,7 @@ def create_dataloaders(data_dir='data/processed',
         batch_size=batch_size,
         shuffle=False,
         num_workers=num_workers,
-        pin_memory=True
+        pin_memory=pin_memory
     )
     
     test_loader = DataLoader(
@@ -230,42 +255,44 @@ def create_dataloaders(data_dir='data/processed',
         batch_size=batch_size,
         shuffle=False,
         num_workers=num_workers,
-        pin_memory=True
+        pin_memory=pin_memory
     )
     
     # Get class weights for weighted loss
     class_weights = train_dataset.get_class_weights()
     
-    print("\n" + "="*60)
+    print("\n" + "="*70)
     print("DATALOADER SUMMARY")
-    print("="*60)
+    print("="*70)
     print(f"Train batches: {len(train_loader)} (batch_size={batch_size})")
     print(f"Val batches:   {len(val_loader)}")
     print(f"Test batches:  {len(test_loader)}")
     print("\nClass weights (for weighted loss):")
     for i, cls in enumerate(train_dataset.classes):
         print(f"  {cls:15s}: {class_weights[i]:.4f}")
-    print("="*60 + "\n")
+    print("="*70 + "\n")
     
     return {
         'train': train_loader,
         'val': val_loader,
         'test': test_loader,
         'class_weights': class_weights,
-        'classes': train_dataset.classes
+        'class_names': train_dataset.classes,
+        'num_classes': len(train_dataset.classes)
     }
 
 
 # Test the dataset
 if __name__ == "__main__":
+    from ..utils.config import load_config
+    
     print("Testing ChestXrayDataset...\n")
     
+    # Load config
+    config = load_config()
+    
     # Create dataloaders
-    dataloaders = create_dataloaders(
-        data_dir='data/processed',
-        batch_size=16,
-        num_workers=2
-    )
+    dataloaders = create_dataloaders(config)
     
     # Test one batch
     train_loader = dataloaders['train']
@@ -279,7 +306,7 @@ if __name__ == "__main__":
     
     # Check class distribution in one batch
     print("\nClass distribution in sample batch:")
-    classes = dataloaders['classes']
+    classes = dataloaders['class_names']
     for i, cls in enumerate(classes):
         count = (labels == i).sum().item()
         print(f"  {cls:15s}: {count} images")
