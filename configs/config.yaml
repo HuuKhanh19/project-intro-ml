@@ -1,120 +1,124 @@
-  # Chest X-ray Classification - Main Configuration
+# Chest X-ray Classification - Main Configuration
+# Version: 1.0.0 - Optimized for RTX 5070 Ti (16GB)
 
-  # Project metadata
-  project:
-    name: "chest-xray-classification"
-    version: "1.0.0"
-    seed: 42
-    num_classes: 5
-    class_names: ['Normal', 'Pneumonia', 'COVID', 'Tuberculosis', 'Pneumothorax']
+# Project metadata
+project:
+  name: "chest-xray-classification"
+  version: "1.0.0"
+  seed: 42
+  num_classes: 5
+  class_names: ['Normal', 'Pneumonia', 'COVID', 'Tuberculosis', 'Pneumothorax']
 
-  # Data configuration
-  data:
-    data_dir: "data/processed"
-    image_size: 224
-    num_workers: 8
-    pin_memory: true
+# Data configuration
+data:
+  data_dir: "data/processed"
+  image_size: 224
+  num_workers: 8  # Tối ưu cho CPU multi-core
+  pin_memory: true
 
-  # Training configuration
-  training:
-    batch_size: 32
-    epochs: 50
-    early_stopping_patience: 10
-    
-    # Optimizer settings
+# Training configuration
+training:
+  batch_size: 32
+  epochs: 50
+  early_stopping_patience: 7  # Giảm từ 10 → 7 để tránh overfit
+  
+  # Optimizer settings
+  optimizer:
+    type: "adam"
+    lr: 0.001
+    weight_decay: 0.001  # Tăng từ 0.0001 → 0.001 (L2 regularization)
+    momentum: 0.9  # for SGD only
+    betas: [0.9, 0.999]  # for Adam/AdamW
+  
+  # Learning rate scheduler
+  scheduler:
+    type: "cosine"
+    params:
+      T_max: 50
+      step_size: 10
+      gamma: 0.1
+      patience: 5
+  
+  # Mixed precision training
+  use_amp: true  # BẬT để nhanh hơn 40-50%
+
+# Model-specific configurations
+models:
+  mlp:
+    pretrained: false
+    dropout: 0.5
+    hidden_dims: [1024, 512]
+    # Override training settings
+    batch_size: 16  # MLP memory intensive
     optimizer:
-      type: "adam"  # adam, sgd, adamw
-      lr: 0.001
-      weight_decay: 0.0001
-      momentum: 0.9  # for SGD only
-      betas: [0.9, 0.999]  # for Adam/AdamW
-    
-    # Learning rate scheduler
-    scheduler:
-      type: "cosine"  # cosine, step, plateau, none
-      params:
-        T_max: 50  # for cosine
-        step_size: 10  # for step
-        gamma: 0.1  # for step and plateau
-        patience: 5  # for plateau
-    
-    # Mixed precision training
-    use_amp: true
+      lr: 0.0005
+      weight_decay: 0.001
+  
+  lenet:
+    pretrained: false
+    dropout: 0.5
+    optimizer:
+      weight_decay: 0.001
+  
+  densenet121:
+    pretrained: true
+    dropout: 0.3  # Tăng từ 0.2 → 0.3 để chống overfit
+    optimizer:
+      lr: 0.0001
+      weight_decay: 0.001  # Tăng weight decay
+    freeze_backbone: false
+    unfreeze_after_epoch: 0
+  
+  efficientnet_b0:
+    pretrained: true
+    dropout: 0.3  # Tăng từ 0.2 → 0.3
+    optimizer:
+      lr: 0.0001
+      weight_decay: 0.001
+    freeze_backbone: false
+    unfreeze_after_epoch: 0
 
-  # Model-specific configurations
-  models:
-    mlp:
-      pretrained: false
-      dropout: 0.5
-      hidden_dims: [1024, 512]
-      # Override training settings
-      batch_size: 16  # MLP is memory intensive
-      optimizer:
-        lr: 0.0005  # Lower learning rate for MLP
-    
-    lenet:
-      pretrained: false
-      dropout: 0.5
-      # Use default training settings
-    
-    densenet121:
-      pretrained: true
-      dropout: 0.2  # Lower dropout for pretrained
-      optimizer:
-        lr: 0.0001  # Fine-tuning requires lower lr
-      # Fine-tuning strategy
-      freeze_backbone: false
-      unfreeze_after_epoch: 0  # 0 = train entire model from start
-    
-    efficientnet_b0:
-      pretrained: true
-      dropout: 0.2
-      optimizer:
-        lr: 0.0001
-      freeze_backbone: false
-      unfreeze_after_epoch: 0
+# Loss function configurations
+loss:
+  weighted_ce:
+    use_class_weights: true
+  
+  focal:
+    gamma: 2.0
+    alpha: "auto"
 
-  # Loss function configurations
-  loss:
-    weighted_ce:
-      use_class_weights: true  # Compute from training data
-    
-    focal:
-      gamma: 2.0
-      alpha: "auto"  # Use class weights, or null/0.25 for fixed
+# Data augmentation - TĂNG CƯỜNG ĐỂ CHỐNG OVERFIT
+augmentation:
+  # Augmentation parameters
+  horizontal_flip_prob: 0.5
+  rotation_limit: 15  # Tăng từ 10 → 15 degrees
+  rotation_prob: 0.5  # Tăng từ 0.3 → 0.5
+  gamma_limit: [70, 130]  # Mở rộng từ [80, 120]
+  gamma_prob: 0.5  # Tăng từ 0.3 → 0.5
+  clahe_clip_limit: 2.0
+  clahe_tile_grid_size: [8, 8]
+  clahe_prob: 0.5  # Tăng từ 0.3 → 0.5
+  
+  # Apply augmentation only to minority classes
+  augment_minority_only: true
+  minority_classes: ['COVID', 'Tuberculosis', 'Pneumothorax']
 
-  # Data augmentation (applied in dataset.py)
-  augmentation:
-    # Augmentation parameters
-    horizontal_flip_prob: 0.5
-    rotation_limit: 10  # ±10 degrees
-    rotation_prob: 0.3
-    gamma_limit: [80, 120]
-    gamma_prob: 0.3
-    clahe_clip_limit: 2.0
-    clahe_tile_grid_size: [8, 8]
-    clahe_prob: 0.3
-    
-    # Apply augmentation only to minority classes
-    augment_minority_only: true
-    minority_classes: ['COVID', 'Tuberculosis', 'Pneumothorax']
+# Checkpoint settings
+checkpoint:
+  save_dir: "checkpoints"
+  save_best: true
+  save_latest: true
+  save_frequency: 0
 
-  # Checkpoint settings
-  checkpoint:
-    save_dir: "checkpoints"
-    save_best: true
-    save_latest: true
-    save_frequency: 0  # Save every N epochs, 0 = only best/latest
+# Logging settings
+logging:
+  use_tensorboard: true
+  log_dir: "logs"
+  print_frequency: 100
 
-  # Logging settings
-  logging:
-    use_tensorboard: true
-    log_dir: "logs"
-    print_frequency: 100  # Print every N batches
-
-  # Evaluation settings
-  evaluation:
-    metrics: ['accuracy', 'precision', 'recall', 'f1', 'auc']
-    save_confusion_matrix: true
-    save_classification_report: true
-    results_dir: "results"
+# Evaluation settings
+evaluation:
+  metrics: ['accuracy', 'precision', 'recall', 'f1', 'auc']
+  save_confusion_matrix: true
+  save_classification_report: true
+  results_dir: "results"

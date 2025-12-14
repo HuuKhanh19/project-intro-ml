@@ -13,7 +13,7 @@ Modules:
 """
 
 __version__ = "1.0.0"
-__author__ = "Chest X-ray Classification Team"
+__author__ = "Huu Khanh Dang"
 
 # Import main components
 from . import data
